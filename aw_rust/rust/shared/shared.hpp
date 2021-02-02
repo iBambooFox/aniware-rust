@@ -1,5 +1,8 @@
 #include <iostream>
 #include <windows.h>
+#include <functional>
+#include <vector>
+#include <deque>
 #include <chrono>
 #include <thread>
 

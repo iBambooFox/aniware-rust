@@ -7,6 +7,10 @@ enum key_flag_t : std::int32_t
 
 enum virtual_key_t : std::int32_t
 {
+	vk_lbutton = 0x01,
+	vk_rbutton = 0x02,
+	vk_end = 0x23,
+	vk_home = 0x24,
 	vk_numpad_0 = 0x60,
 	vk_numpad_1 = 0x61,
 	vk_numpad_2 = 0x62,
@@ -31,6 +35,18 @@ enum virtual_key_t : std::int32_t
 
 struct input_t
 {
+	auto mouse_handler( const virtual_key_t first, const virtual_key_t second, const std::float_t sensitivity, const std::float_t fov,
+		const std::function <void( const std::float_t, const std::float_t )> &func ) -> void
+	{
+		if ( ::GetAsyncKeyState( first ) )
+		{
+			if ( ::GetAsyncKeyState( second ) )
+			{
+				func( sensitivity, fov );
+			}
+		}
+	}
+	
 	auto key_handler( const virtual_key_t key, const key_flag_t flag ) -> bool
 	{
 		return ( ::GetAsyncKeyState( key ) == -flag );
