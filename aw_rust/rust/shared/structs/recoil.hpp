@@ -6,7 +6,7 @@ enum table_translation_t : std::uint32_t
 	weapon_lr,
 };
 
-const std::deque <vec2_t> recoil_t[ ] = {
+const std::vector <vec2_t> recoil_t[ ] = {
 	{ { -35, 50, 121.96149709966872f }, { 5, 46, 92.6333814724611f }, { -55, 42, 138.60598637206294f }, {-42, 37, 113.37874368443146f }, { 0, 33, 66.25151186427745f },
 	{ 16, 28, 66.29530438019354f }, { 29, 24, 75.9327831420658f }, { 38, 19, 85.05526144256157f }, { 42, 14, 89.20256669256554f }, { 42, 9, 86.68010184667988f },
 	{ 38, 9, 78.82145888317788f }, { 30, 18, 70.0451048111144f }, { 17, 25, 60.85979604582978f }, { 0, 29, 59.51642457624619f }, { -15, 32, 71.66762996283607f },
@@ -30,14 +30,17 @@ struct recoil_control_t
 
 		for ( std::double_t i = 1.f; i <= reset; i++ )
 		{
-			loop = vec2_t( ( i * delta.m_x ) / reset, ( i * delta.m_y ) / reset, ( i * reset ) / reset );
+			loop = vec2_t( i * delta.m_x / reset, i * delta.m_y / reset, i * reset / reset );
 			move( vec2_t( loop.m_x - context.m_x, loop.m_x - context.m_x ) );
 
-			high_resolution_time->experimental_sleep( static_cast <std::uint32_t> ( loop.m_time - context.m_time ) );
+			high_resolution_time->accurate_sleep( static_cast <std::uint32_t> ( loop.m_time - context.m_time ) );
 			context = vec2_t( loop.m_x, loop.m_y, loop.m_time );
 		}
 
-		high_resolution_time->experimental_sleep( static_cast <std::uint32_t> ( delay - reset ) );
+		if ( delay - reset >= 0.f )
+		{	
+			high_resolution_time->accurate_sleep( static_cast <std::uint32_t> ( delay - reset ) );
+		}
 	}
 
 	auto correct_recoil( const std::float_t sensitivity, const std::float_t fov ) -> void
@@ -49,20 +52,27 @@ struct recoil_control_t
 
 		std::uint32_t bullets_fired{ };
 
-		while ( !input->key_handler( virtual_key_t::vk_end, key_flag_t::key_pressed ) )
+		for ( ;; )
 		{
-			input->mouse_handler( virtual_key_t::vk_rbutton, virtual_key_t::vk_lbutton, sensitivity, fov,
+			if ( input->mouse_handler( virtual_key_t::vk_rbutton, virtual_key_t::vk_lbutton, sensitivity, fov,
 				[ & ]( const std::float_t sensitivity, const std::float_t fov ) -> void 
 				{
-					auto& context = recoil_t[ table_translation_t::weapon_ak ][ bullets_fired ];
+					if ( auto &context = recoil_t[ table_translation_t::weapon_ak ]; bullets_fired < context.size( ) )
+					{
+						accurate_move( delay_t[ table_translation_t::weapon_ak ], context[ bullets_fired ].m_time, vec2_t( calculate_angle( sensitivity, fov, context[ bullets_fired ].m_x ),
+							calculate_angle( sensitivity, fov, context[ bullets_fired ].m_y ) ) );
 
-					accurate_move( delay_t[ table_translation_t::weapon_ak ], context.m_time, vec2_t( calculate_angle( sensitivity, fov, context.m_x ),
-							calculate_angle( sensitivity, fov, context.m_y ) ) );
-
-					std::cout << bullets_fired;
-					bullets_fired++;
+						std::cout << bullets_fired << std::endl;
+					}
 				}
-			);
+			) )
+			{
+				bullets_fired++;
+			}
+			else
+			{
+				bullets_fired = 0;
+			}
 		}
 	}
 };

@@ -2,7 +2,8 @@
 
 enum key_flag_t : std::int32_t
 {
-	key_pressed = 0x7FFF
+	key_pressed = 0x7FFF,
+	key_held = 0x8000
 };
 
 enum virtual_key_t : std::int32_t
@@ -36,15 +37,10 @@ enum virtual_key_t : std::int32_t
 struct input_t
 {
 	auto mouse_handler( const virtual_key_t first, const virtual_key_t second, const std::float_t sensitivity, const std::float_t fov,
-		const std::function <void( const std::float_t, const std::float_t )> &func ) -> void
+		const std::function <void( const std::float_t, const std::float_t )> &func ) -> bool
 	{
-		if ( ::GetAsyncKeyState( first ) )
-		{
-			if ( ::GetAsyncKeyState( second ) )
-			{
-				func( sensitivity, fov );
-			}
-		}
+		if ( ::GetAsyncKeyState( 0x4C ) and ::GetAsyncKeyState( 0x4B ) & key_flag_t::key_held ) 
+			{ func( sensitivity, fov ); return true; } else { return false;	}
 	}
 	
 	auto key_handler( const virtual_key_t key, const key_flag_t flag ) -> bool
